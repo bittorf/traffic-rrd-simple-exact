@@ -24,12 +24,6 @@ while [ -n "$1" ]; do {
 	shift
 } done
 
-# defaults:
-[ -z "$WWWDIR" ] && WWWDIR='/var/www/html'
-[ -z "$TMPDIR" ] && TMPDIR='/dev/shm'
-[ -z "$DEV" ] && DEV="$( get_dev_from_ip_default_route )"
-[ -z "$AUTOUPDATE" ] && AUTOUPDATE='true'
-
 # TODO: start|restart|backup|autorestore
 # TODO: autoremove lockdir when script ends (trap)
 # TODO: read integers from MAX-file, so tmpfs can have 'noexec'
@@ -373,6 +367,12 @@ measure_and_loop_forever()
 		sleep 1
 	} done
 }
+
+# defaults:
+[ -z "$WWWDIR" ] && WWWDIR='/var/www/html'
+[ -z "$TMPDIR" ] && TMPDIR='/dev/shm'
+[ -z "$DEV" ] && DEV="$( get_dev_from_ip_default_route )"
+[ -z "$AUTOUPDATE" ] && AUTOUPDATE='true'
 
 build_vars
 
