@@ -18,12 +18,14 @@ or an easy cronjob:
 main loop explained
 ===================
 
+```
 We measure in short intervals, usually exactly each second.
 We keep the max of RX and TX bits and plot it every minute.
 We use the kernel-counters in /sys for bytes of a device.
 We read kerneluptime after each loop, so we can later normalize to 1 sec.
-We mostly use 'built-ins', so these commands are very fast.
+We mostly use 'shell built-ins', so these commands are very fast.
 We plot the data in another thread, so measuring is not affected.
+```
 
 Pseudocode:
 ```
@@ -50,5 +52,15 @@ loop_forever
 	DIFF > TX_MAX  =>  TX_MAX = DIFF
 
 	sleep 1
+)
+
+plot_data (called from cron each minute)
+(
+	touch_file 'write_data'
+	wait_till_file_gets_updated (max-data)
+	read_file
+
+	update_rrd
+	plot_graph_from_rrd
 )
 ```
