@@ -297,11 +297,19 @@ try_update()
 	wget -qO "$file" "$url" >/dev/null 2>/dev/null
 
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
-		mv "$file" "$0" && chmod +x "$0"
-		html_generate
+		if cmp "$file" "$0"; then
+			rm "$file"
+		else
+			if sh -n "$file"; then
+				mv "$file" "$0" && chmod +x "$0"
+				html_generate
+			else
+				rm "$file"
+			fi
+		fi
 	else
 		rm "$file"
-		return 1
+		false
 	fi
 }
 
