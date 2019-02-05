@@ -62,7 +62,7 @@ build_vars()
 	export RRD="$TMPDIR/rrd_database_device_${DEV}.rrd"
 	export MAX="$TMPDIR/rrd_database_device_${DEV}.lastmax"
 
-	export HOSTNAME="$( cat '/proc/sys/kernel/hostname' 2>/dev/null || sysctl -n kern.hostname )"
+	export HOSTNAME="$( cat '/proc/sys/kernel/hostname' )"
 	export LOCKDIR="$TMPDIR/rrd_database_device_${DEV}.lock"
 }
 
@@ -176,7 +176,6 @@ rrd_update()
 {
 	local rx="$1"
 	local tx="$2"
-	local keep tenge
 
 	rrdtool update "$RRD" "N:$rx:$tx" || {
 		keep=$(( 60 * 24 * KEEP_DAYS ))
@@ -224,7 +223,6 @@ test_exists()
 	local dir_or_file="$1"	# e.g. dir
 	local object="$2"	# e.g. /tmp
 	local name="$3"		# e.g. ramdisk
-	local parameter
 
 	if   [ "$dir_or_file" = 'file' -a -f "$object" ]; then
 		log "[OK] $name -> $dir_or_file '$object' exists" 
