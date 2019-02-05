@@ -21,6 +21,9 @@ main loop explained
 We measure in short intervals, usually exactly each second.
 We keep the max of RX and TX bits and plot it every minute.
 We use the kernel-counters in /sys for bytes of a device.
+We read kerneluptime after each loop, so we can later normalize to 1 sec.
+We mostly use 'built-ins', so these commands are very fast.
+We plot the data in another thread, so measuring is not affected.
 
 Pseudocode:
 ```
