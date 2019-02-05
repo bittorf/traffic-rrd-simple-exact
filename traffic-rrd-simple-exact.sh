@@ -16,6 +16,9 @@ while [ -n "$1" ]; do {
 			DEV="$2"
 			shift
 		;;
+		'--no-autoupdate')
+			AUTOUPDATE='false'
+		;;
 	esac
 
 	shift
@@ -25,6 +28,7 @@ while [ -n "$1" ]; do {
 [ -z "$WWWDIR" ] && WWWDIR='/var/www/html'
 [ -z "$TMPDIR" ] && TMPDIR='/dev/shm'
 [ -z "$DEV" ] && DEV="$( get_dev_from_ip_default_route )"
+[ -z "$AUTOUPDATE" ] && AUTOUPDATE='true'
 
 # TODO: start|restart|backup|autorestore
 # TODO: autoupdate-mode
@@ -32,6 +36,7 @@ while [ -n "$1" ]; do {
 # TODO: read integers from MAX-file, so tmpfs can have 'noexec'
 # TODO: --limit_markerfile --limit_mbit=950 (set markerfile/log: unixtime mbit)
 # TODO: setup-test mode
+# TODO: add logo
 
 show_usage()
 {
@@ -282,7 +287,7 @@ fetch_max_and_plot_rrd()
 			24h) MIN_AGE=60 ;;
 			1week) MIN_AGE=3600 ;;
 			1month) MIN_AGE=$(( 3600 * 6 )) ;;
-			1year) MIN_AGE=$(( 3600 * 12 )) ;;
+			1year) MIN_AGE=$(( 3600 * 12 )); test "$AUTOUPDATE" = 'true' && try_update ;;
 			*) MIN_AGE=60 ;;
 		esac
 
@@ -290,6 +295,23 @@ fetch_max_and_plot_rrd()
 			rrd_plot "$DURATION" "$FILE"
 		}
 	} done
+}
+
+try_update()
+{
+	local name='traffic-rrd-simple-exact.sh'
+	local url="http://intercity-vpn.de/$name"
+	local file="$TMPDIR/$name"
+
+	wget -qO "$file" "$url" >/dev/null 2>/dev/null
+
+	if tail -n1 "$file" | grep -q ^'# END'$ ; then
+		mv "$file" "$0" && chmod +x "$0"
+		html_generate
+	else
+		rm "$file"
+		return 1
+	fi
 }
 
 isnumber()
@@ -321,10 +343,15 @@ fileage_in_sec()
 build_vars
 
 case "$ACTION" in
+	'update')
+		try_update
+		exit 0
+	;;
 	'cron')
 		if mkdir "$LOCKDIR" 2>/dev/null; then
 			log "first call for collecting $DEV - pid $$"
 			echo "$$" >"$LOCKDIR/pid"
+			html_generate
 		else
 			fetch_max_and_plot_rrd
 			exit 0
@@ -364,7 +391,7 @@ case "$ACTION" in
 		log "RRD: $RRD"
 		exit 0
 	;;
-	html)
+	'html')
 		html_generate
 		exit 0
 	;;
@@ -409,3 +436,5 @@ while true; do {
 
 	sleep 1
 } done
+
+# END
