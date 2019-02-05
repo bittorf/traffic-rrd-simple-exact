@@ -31,7 +31,6 @@ while [ -n "$1" ]; do {
 [ -z "$AUTOUPDATE" ] && AUTOUPDATE='true'
 
 # TODO: start|restart|backup|autorestore
-# TODO: autoupdate-mode
 # TODO: autoremove lockdir when script ends (trap)
 # TODO: read integers from MAX-file, so tmpfs can have 'noexec'
 # TODO: --limit_markerfile --limit_mbit=950 (set markerfile/log: unixtime mbit)
@@ -340,21 +339,55 @@ fileage_in_sec()
 	echo $(( unix_now - unix_file ))
 }
 
+measure_and_loop_forever()
+{
+	RX_MAX=0
+	TX_MAX=0
+
+	while true; do {
+		[ -f "$MAX.write_now" ] && {
+			printf '%s\n' "RX_MAX=$RX_MAX; TX_MAX=$TX_MAX; T1=$T1; OLD_T1=$OLD_T1; T2=$T2; OLD_T2=$OLD_T2" >"$MAX"
+			RX_MAX=0
+			TX_MAX=0
+		}
+
+		OLD_T1=$T1
+		read -r T1 _ </proc/uptime
+
+		OLD_RX=$RX
+		read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
+
+		DIFF_RX=$(( RX - ${OLD_RX:-$RX} ))
+		[ $DIFF_RX -gt $RX_MAX ] && RX_MAX=$DIFF_RX
+
+
+		OLD_T2=$T2
+		read -r T2 _ </proc/uptime
+
+		OLD_TX=$TX
+		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
+
+		DIFF_TX=$(( TX - ${OLD_TX:-$TX} ))
+		[ $DIFF_TX -gt $TX_MAX ] && TX_MAX=$DIFF_TX
+
+		sleep 1
+	} done
+}
+
 build_vars
 
 case "$ACTION" in
 	'update')
 		try_update
-		exit 0
 	;;
 	'cron')
 		if mkdir "$LOCKDIR" 2>/dev/null; then
 			log "first call for collecting $DEV - pid $$"
 			echo "$$" >"$LOCKDIR/pid"
 			html_generate
+			measure_and_loop_forever
 		else
 			fetch_max_and_plot_rrd
-			exit 0
 		fi
 	;;
 	'status')
@@ -362,8 +395,6 @@ case "$ACTION" in
 		test_exists 'file' "$RRD" 'rrd-database'
 		test_exists 'file' "$MAX" 'last-min-max-values'
 		test_exists 'file' "$LOG" 'logfile'
-
-		exit 0
 	;;
 	'stop')
 		if [ -f "$LOCKDIR/pid" ]; then
@@ -380,8 +411,6 @@ case "$ACTION" in
 		else
 			log "no lockdir found"
 		fi
-
-		exit 0
 	;;
 	'plot')
 		for DURATION in $( duration_list ); do {
@@ -389,11 +418,9 @@ case "$ACTION" in
 		} done
 
 		log "RRD: $RRD"
-		exit 0
 	;;
 	'html')
 		html_generate
-		exit 0
 	;;
 	'collect')
 		log "abort with CTRL+C and plot with: $0 plot"
@@ -401,40 +428,8 @@ case "$ACTION" in
 	;;
 	*)
 		show_usage
-		exit 1
+		false
 	;;
 esac
-
-RX_MAX=0
-TX_MAX=0
-
-while true; do {
-	[ -f "$MAX.write_now" ] && {
-		printf '%s\n' "RX_MAX=$RX_MAX; TX_MAX=$TX_MAX; T1=$T1; OLD_T1=$OLD_T1; T2=$T2; OLD_T2=$OLD_T2" >"$MAX"
-		RX_MAX=0
-		TX_MAX=0
-	}
-
-	OLD_T1=$T1
-	read -r T1 _ </proc/uptime
-
-	OLD_RX=$RX
-	read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
-
-	DIFF_RX=$(( RX - ${OLD_RX:-$RX} ))
-	[ $DIFF_RX -gt $RX_MAX ] && RX_MAX=$DIFF_RX
-
-
-	OLD_T2=$T2
-	read -r T2 _ </proc/uptime
-
-	OLD_TX=$TX
-	read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
-
-	DIFF_TX=$(( TX - ${OLD_TX:-$TX} ))
-	[ $DIFF_TX -gt $TX_MAX ] && TX_MAX=$DIFF_TX
-
-	sleep 1
-} done
 
 # END
