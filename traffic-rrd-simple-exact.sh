@@ -204,13 +204,13 @@ rrd_update()
 
 rrd_plot()
 {
-	local duration="$1"		# 1h,24h,1week,1month,1year
+	local duration="$1"		# 1h,6h,24h,1week,1month,1year
 	local file="$2"
 	local color_blue='#0000ff'
 	local color_red='#00ff00'
 	local title
 
-	title="$duration | traffic @ $HOSTNAME on $DEVTYPE-dev '$DEV' |"
+	title="traffic last $duration @ $HOSTNAME on $DEVTYPE-dev '$DEV' |"
 	title="$title $( get_dev_speed )mbit/s | MTU: $( get_dev_mtu ) |"
 	title="$title driver: $( get_dev_driver ) |"
 	title="$title measured each sec from $( basename "$0" )"
