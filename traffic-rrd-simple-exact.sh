@@ -309,7 +309,7 @@ try_update()
 	wget -qO "$file" "$url" >/dev/null 2>/dev/null || log "[ERR] download failed: $url"
 
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
-		if cmp "$file" "$0"; then
+		if cmp -s "$file" "$0"; then
 			log "[OK] no new version"
 			rm "$file"
 		else
