@@ -175,6 +175,7 @@ html_generate()
 .flab { position: absolute; bottom: 10px; left: 140px; color: black; }
 .gith { position: absolute; bottom: 10px; right: 20px; color: black; }
 </style><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv=refresh content=90>
 <title>RRD</title></head><body><div class=fcon>
 <img src='rrd-$DEV-$duration.png' alt='Traffic RRD-Graph of last $duration' width=$x height=$y>
 <span class=flab>Interval: $( show_links )</span><span class=gith>
