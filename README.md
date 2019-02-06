@@ -29,7 +29,8 @@ Pseudocode:
 ```
 loop_forever
 (
-	exists_file 'write_data'  =>  write_to_file(RX_MAX, uptime1, uptime1_old)
+	if exists_file 'write_data'
+		write_to_file (RX_MAX, uptime1, uptime1_old)
 
 	uptime1_old = uptime1
 	uptime1     = read_uptime_from_kernel()
@@ -48,8 +49,8 @@ plot_data (called from cron each minute)
 	touch_file 'write_data'
 	wait_till_file_gets_updated (max-data)
 
-	read_file
-	update_rrd
-	plot_graph_from_rrd
+	values = read_from_file (max-data)
+	update_rrd (values)
+	plot_graphs
 )
 ```
