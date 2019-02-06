@@ -24,12 +24,14 @@ while [ -n "$1" ]; do {
 	shift
 } done
 
-# TODO: start|restart|backup|autorestore
+# TODO: check_setup|start|restart
+# TODO: always do autobackup/autorestore (in/from wwwdir)
+# TODO: when having multiple graphs, make it selectable
+# TODO: +/- for bigger/smaller picture
 # TODO: autoremove lockdir when script ends (trap)
-# TODO: read integers from MAX-file, so tmpfs can have 'noexec'
 # TODO: --limit_markerfile --limit_mbit=950 (set markerfile/log: unixtime mbit)
-# TODO: setup-test mode
-# TODO: add logo
+# TODO: --logo file.png
+
 
 show_usage()
 {
@@ -68,13 +70,16 @@ build_vars()
 
 log()
 {
-	case "$2" in
+	local message="$1"
+	local prio="$2"
+
+	case "$prio" in
 		alert)
-			printf '%s\n' "$(date) - $0: $1" >>"$LOG"
+			printf '%s\n' "$(date) - $0: $message" >>"$LOG"
 		;;
 	esac
 
-	logger -s -- "$0: $1"
+	logger -s -- "$0: $message"
 }
 
 get_dev_speed()		# only for legend in RRD-plot in [mbit/s]
@@ -184,7 +189,7 @@ rrd_update()
 			DS:RX:GAUGE:90:0:U \
 			DS:TX:GAUGE:90:0:U \
 				--step 60s \
-				RRA:LAST:0.5:1:$keep && \
+				RRA:MAX:0.5:1:$keep && \
 					log "[OK] init RRD: $RRD"
 		# now try again
 		rrdtool update "$RRD" "N:$rx:$tx"
@@ -205,15 +210,15 @@ rrd_plot()
 	title="$title measured each sec from $( basename "$0" )"
 
 	# first valid unixtimestamp:
-	# rrdtool fetch "$RRD" LAST | grep -m1 ': [0-9]' | cut -d':' -f1
+	# rrdtool fetch "$RRD" MAX | grep -m1 ': [0-9]' | cut -d':' -f1
 
 	rrdtool graph "$file" >/dev/null \
 		--start "-$duration" \
 		--imgformat PNG --width 1600 --height 800 \
 		--vertical-label "bits / second" \
 		--title "$title" \
-			"DEF:rx=$RRD:RX:LAST" \
-			"DEF:tx=$RRD:TX:LAST" \
+			"DEF:rx=$RRD:RX:MAX" \
+			"DEF:tx=$RRD:TX:MAX" \
 			"LINE1:rx${color_blue}:RX/download\n" \
 			"LINE1:tx${color_red}:TX/upload"
 }
