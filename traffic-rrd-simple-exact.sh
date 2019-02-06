@@ -40,6 +40,12 @@ show_usage()
 
 	echo "Usage: $0 <action> --switch1 word1 --switch2 word2"
 	echo
+	echo " action can be one of:"
+	echo " cron|stop|purge|plot|html|status|check_setup|update"
+	echo
+	echo " switch can be multiple of:"
+	echo " --wwwdir|--tmpdir|--dev|--no-autoupdate|--logo"
+	echo
 	echo " e.g.: $0 stop"
 	echo " e.g.: $0 plot --dev eth4"
 	echo " e.g.: $0 plot --dev eth4 --wwwdir /var/www"
@@ -433,10 +439,6 @@ case "$ACTION" in
 	;;
 	'html')
 		html_generate
-	;;
-	'collect')
-		log "abort with CTRL+C and plot with: $0 plot"
-		log "RRD: $RRD"
 	;;
 	*)
 		show_usage
