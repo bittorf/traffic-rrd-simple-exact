@@ -306,20 +306,24 @@ try_update()
 	local url="http://intercity-vpn.de/$name"
 	local file="$TMPDIR/$name"
 
-	wget -qO "$file" "$url" >/dev/null 2>/dev/null
+	wget -qO "$file" "$url" >/dev/null 2>/dev/null || log "[ERR] download failed: $url"
 
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
 		if cmp "$file" "$0"; then
+			log "[ERR] no new version"
 			rm "$file"
 		else
 			if sh -n "$file"; then
+				log "[OK] installing new version" alert
 				mv "$file" "$0" && chmod +x "$0"
 				html_generate
 			else
+				log "[ERR] download broken"
 				rm "$file"
 			fi
 		fi
 	else
+		log "[ERR] download invalid"
 		rm "$file"
 		false
 	fi
