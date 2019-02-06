@@ -310,7 +310,7 @@ try_update()
 
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
 		if cmp "$file" "$0"; then
-			log "[ERR] no new version"
+			log "[OK] no new version"
 			rm "$file"
 		else
 			if sh -n "$file"; then
