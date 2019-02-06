@@ -162,7 +162,7 @@ html_generate()
 			firstrun=
 
 			if [ "$duration" = "$obj" ]; then
-				printf '%s\n' "<b>$obj</a>"
+				printf '%s\n' "<b>$obj</b>"
 			else
 				printf '%s\n' "<a href='rrd-$DEV-$obj.html'>$obj</a>"
 			fi
