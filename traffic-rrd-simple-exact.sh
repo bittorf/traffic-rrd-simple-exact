@@ -128,7 +128,7 @@ get_dev_from_ip_default_route()
 
 duration_list()
 {
-	echo '1h 24h 1week 1month 1year'
+	echo '1h 6h 24h 1week 1month 1year'
 }
 
 html_generate()
@@ -280,7 +280,8 @@ fetch_max_and_plot_rrd()
 
 		case "$DURATION" in
 			1h) MIN_AGE=60 ;;
-			24h) MIN_AGE=60 ;;
+			6h) MIN_AGE=180 ;;
+			24h) MIN_AGE=600 ;;
 			1week) MIN_AGE=3600 ;;
 			1month) MIN_AGE=$(( 3600 * 6 )) ;;
 			1year) MIN_AGE=$(( 3600 * 12 )); test "$AUTOUPDATE" = 'true' && try_update ;;
@@ -332,7 +333,7 @@ uptime_to_centysec()
 
 filetime()
 {
-	date +%s -r "$1"
+	date +%s -r "$1" 2>/dev/null || echo '0'
 }
 
 fileage_in_sec()
