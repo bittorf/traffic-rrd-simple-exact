@@ -196,7 +196,7 @@ rrd_update()
 			DS:TX:GAUGE:90:0:U \
 				--step 60s \
 				RRA:MAX:0.5:1:$keep && \
-					log "[OK] init RRD: $RRD"
+					log "[OK] initial RRD: $RRD" alert
 		# now try again
 		rrdtool update "$RRD" "N:$rx:$tx"
 	}
@@ -404,7 +404,7 @@ case "$ACTION" in
 	;;
 	'cron')
 		if mkdir "$LOCKDIR" 2>/dev/null; then
-			log "first call for collecting $DEV - pid $$"
+			log "first call for collecting $DEV - pid $$" alert
 			echo "$$" >"$LOCKDIR/pid"
 			html_generate
 			measure_and_loop_forever
@@ -421,14 +421,14 @@ case "$ACTION" in
 	'stop')
 		if [ -f "$LOCKDIR/pid" ]; then
 			read -r PID <"$LOCKDIR/pid"
-			log "stopping PID $PID"
+			log "stopping PID $PID from $LOCKDIR" alert
 			kill "$PID"
 		else
 			log "no pidfile found"
 		fi
 
 		if [ -d "$LOCKDIR" ]; then
-			log "removing lockdir '$LOCKDIR'"
+			log "removing lockdir '$LOCKDIR'" alert
 			rm -fR "$LOCKDIR"
 		else
 			log "no lockdir found"
