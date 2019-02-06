@@ -31,7 +31,7 @@ while [ -n "$1" ]; do {
 # TODO: autoremove lockdir when script ends (trap)
 # TODO: --limit_markerfile --limit_mbit=950 (set markerfile/log: unixtime mbit)
 # TODO: --logo file.png
-
+# TODO: filename-building-definitions in one place
 
 show_usage()
 {
@@ -143,7 +143,9 @@ html_generate()
 			html_generate "$duration"
 		} done
 
-		[ -h "$WWWDIR/index.html" ] || ln -s "$WWWDIR/rrd-24h.html" "$WWWDIR/index.html"
+		# symlink default view
+		[ -h "$WWWDIR/index.html" ] || ln -s "$WWWDIR/rrd-$DEV-24h.html" "$WWWDIR/index.html"
+
 		return 0
 	}
 
@@ -156,21 +158,19 @@ html_generate()
 			if [ "$duration" = "$obj" ]; then
 				printf '%s\n' "<b>$obj</a>"
 			else
-				printf '%s\n' "<a href='rrd-$obj.html'>$obj</a>"
+				printf '%s\n' "<a href='rrd-$DEV-$obj.html'>$obj</a>"
 			fi
 		} done
 	}
 
-# <span class=flab>Interval: <a href='rrd-1h.html'>1h</a> | <b>24h</b> | <a href='rrd-1week.html'>1week</a> | <a href='rrd-1month.html'>1month</a> | <a href='rrd-1year.html'>1year</a></span>
-
-	cat >"$WWWDIR/rrd-$duration.html" <<EOF
+	cat >"$WWWDIR/rrd-$DEV-$duration.html" <<EOF
 <!DOCTYPE html><html lang=en><head><style>
 .fcon { position: relative; display: inline-block; }
 .flab { position: absolute; bottom: 10px; left: 140px; color: black; }
 .gith { position: absolute; bottom: 10px; right: 20px; color: black; }
 </style><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>RRD</title></head><body><div class=fcon>
-<img src='rrd-$duration.png' alt='Traffic RRD-Graph of last $duration' width=$x height=$y>
+<img src='rrd-$DEV-$duration.png' alt='Traffic RRD-Graph of last $duration' width=$x height=$y>
 <span class=flab>Interval: $( show_links )</span><span class=gith>
 <a href='http://github.com/bittorf/traffic-rrd-simple-exact'>http://github.com/bittorf/traffic-rrd-simple-exact</a>
 </span></div></body></html>
@@ -204,7 +204,7 @@ rrd_plot()
 	local color_red='#00ff00'
 	local title
 
-	title="traffic @ $HOSTNAME on $DEVTYPE-dev '$DEV' |"
+	title="$duration | traffic @ $HOSTNAME on $DEVTYPE-dev '$DEV' |"
 	title="$title $( get_dev_speed )mbit/s | MTU: $( get_dev_mtu ) |"
 	title="$title driver: $( get_dev_driver ) |"
 	title="$title measured each sec from $( basename "$0" )"
@@ -276,7 +276,7 @@ fetch_max_and_plot_rrd()
 		"$(( (8 * TX_MAX * 100) / T2_DIFF ))"
 
 	for DURATION in $( duration_list ); do {
-		FILE="$WWWDIR/rrd-$DURATION.png"
+		FILE="$WWWDIR/rrd-$DEV-$DURATION.png"
 
 		case "$DURATION" in
 			1h) MIN_AGE=60 ;;
@@ -426,7 +426,7 @@ case "$ACTION" in
 	;;
 	'plot')
 		for DURATION in $( duration_list ); do {
-			rrd_plot "$DURATION" "$WWWDIR/rrd-$DURATION.png"
+			rrd_plot "$DURATION" "$WWWDIR/rrd-$DEV-$DURATION.png"
 		} done
 
 		log "RRD: $RRD"
