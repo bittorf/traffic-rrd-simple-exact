@@ -293,12 +293,22 @@ fetch_max_and_plot_rrd()
 			24h) MIN_AGE=600 ;;
 			1week) MIN_AGE=3600 ;;
 			1month) MIN_AGE=$(( 3600 * 6 )) ;;
-			1year) MIN_AGE=$(( 3600 * 12 )); test "$AUTOUPDATE" = 'true' && try_update ;;
+			1year) MIN_AGE=$(( 3600 * 12 )) ;;
 			*) MIN_AGE=60 ;;
 		esac
 
 		[ "$( fileage_in_sec "$FILE" )" -gt $MIN_AGE ] && {
 			rrd_plot "$DURATION" "$FILE"
+
+			[ "$DURATION" = '1year' ] && {
+				[ "$AUTOUPDATE" = 'true' ] && {
+					try_update && {
+						# if there is an update and install was fine:
+						stop_mainloop
+						# ...and cron will reinit
+					}
+				}
+			}
 		}
 	} done
 }
@@ -314,22 +324,23 @@ try_update()
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
 		if cmp -s "$file" "$0"; then
 			log "[OK] no new version"
-			rm "$file"
 		else
 			if sh -n "$file"; then
 				log "[OK] installing new version" alert
 				mv "$file" "$0" && chmod +x "$0"
 				html_generate
+
+				return 0
 			else
 				log "[ERR] download broken"
-				rm "$file"
 			fi
 		fi
 	else
 		log "[ERR] download invalid"
-		rm "$file"
-		false
 	fi
+
+	rm "$file"
+	false
 }
 
 isnumber()
@@ -356,6 +367,18 @@ fileage_in_sec()
 	local unix_file="$( filetime "$file" )"
 
 	echo $(( unix_now - unix_file ))
+}
+
+stop_mainloop()
+{
+	if [ -f "$LOCKDIR/pid" ]; then
+		read -r PID <"$LOCKDIR/pid"
+		log "stopping PID $PID from $LOCKDIR" alert
+		kill "$PID"
+	else
+		log "no pidfile found"
+		false
+	fi
 }
 
 measure_and_loop_forever()
@@ -426,13 +449,7 @@ case "$ACTION" in
 		test_exists 'file' "$LOG" 'logfile'
 	;;
 	'stop')
-		if [ -f "$LOCKDIR/pid" ]; then
-			read -r PID <"$LOCKDIR/pid"
-			log "stopping PID $PID from $LOCKDIR" alert
-			kill "$PID"
-		else
-			log "no pidfile found"
-		fi
+		stop_mainloop
 
 		if [ -d "$LOCKDIR" ]; then
 			log "removing lockdir '$LOCKDIR'" alert
