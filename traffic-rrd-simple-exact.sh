@@ -24,6 +24,8 @@ while [ -n "$1" ]; do {
 	shift
 } done
 
+# TODO: jeden wert erfassen und alle 60 sekunden das average bilden + speichern
+# TODO: all files into lockdir
 # TODO: check_setup|start|restart
 # TODO: always do autobackup/autorestore (in/from wwwdir)
 # TODO: when having multiple graphs, make it selectable
@@ -363,9 +365,11 @@ measure_and_loop_forever()
 
 	while true; do {
 		[ -f "$MAX.write_now" ] && {
-			printf '%s\n' "RX_MAX=$RX_MAX; TX_MAX=$TX_MAX; T1=$T1; OLD_T1=$OLD_T1; T2=$T2; OLD_T2=$OLD_T2" >"$MAX"
-			RX_MAX=0
-			TX_MAX=0
+			ALL="RX_MAX=$RX_MAX; TX_MAX=$TX_MAX; T1=$T1; OLD_T1=$OLD_T1; T2=$T2; OLD_T2=$OLD_T2; LIST_RX='$LIST_RX'; LIST_TX='$LIST_TX'"
+			RX_MAX=0; LIST_RX=
+			TX_MAX=0; LIST_TX=
+
+			printf '%s\n' "$ALL" >"$MAX"
 		}
 
 		OLD_T1=$T1
@@ -376,6 +380,7 @@ measure_and_loop_forever()
 
 		DIFF_RX=$(( RX - ${OLD_RX:-$RX} ))
 		[ $DIFF_RX -gt $RX_MAX ] && RX_MAX=$DIFF_RX
+		LIST_RX="$LIST_RX $DIFF_RX"
 
 
 		OLD_T2=$T2
@@ -385,7 +390,8 @@ measure_and_loop_forever()
 		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
 
 		DIFF_TX=$(( TX - ${OLD_TX:-$TX} ))
-		[ $DIFF_TX -gt $TX_MAX ] && TX_MAX=$DIFF_TX
+		[ $DIFF_TX -gt $TX_MAX ] && TX_MAX=$DIFF_TX		# TODO: store T2/OLD_T2 from this MAX
+		LIST_TX="$LIST_TX $DIFF_TX"
 
 		sleep 1
 	} done
