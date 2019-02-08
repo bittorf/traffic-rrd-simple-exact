@@ -373,8 +373,11 @@ stop_mainloop()
 {
 	if [ -f "$LOCKDIR/pid" ]; then
 		read -r PID <"$LOCKDIR/pid"
-		log "stopping PID $PID from $LOCKDIR" alert
+		log "stopping PID $PID from $LOCKDIR"
 		kill "$PID"
+
+		log "removing lockdir '$LOCKDIR', pid $PID was killed" alert
+		rm -fR "$LOCKDIR"
 	else
 		log "no pidfile found"
 		false
@@ -450,13 +453,6 @@ case "$ACTION" in
 	;;
 	'stop')
 		stop_mainloop
-
-		if [ -d "$LOCKDIR" ]; then
-			log "removing lockdir '$LOCKDIR'" alert
-			rm -fR "$LOCKDIR"
-		else
-			log "no lockdir found"
-		fi
 	;;
 	'plot')
 		for DURATION in $( duration_list ); do {
