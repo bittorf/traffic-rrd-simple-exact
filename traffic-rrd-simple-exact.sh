@@ -24,8 +24,8 @@ while [ -n "$1" ]; do {
 	shift
 } done
 
-# TODO: jeden wert erfassen und alle 60 sekunden das average bilden + speichern
-# TODO: all files into lockdir
+# TODO: mainloop_simple() only collect all values with all timestamps in a LIST, in 2nd thread: calc+plot+calc average plateau)
+# TODO: autorefresh (depended from plot interval)
 # TODO: check_setup|start|restart
 # TODO: always do autobackup/autorestore (in/from wwwdir)
 # TODO: when having multiple graphs, make it selectable
@@ -382,6 +382,36 @@ stop_mainloop()
 		log "no pidfile found"
 		false
 	fi
+}
+
+measure_and_loop_foreverNEW()
+{
+	# cache command
+	sleep 0
+
+	# first read for avoiding a large step
+	read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
+	read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
+	sleep 1
+
+	while true; do {
+		# check for file with shell-builtin commando
+		read 2>/dev/null NOP -r "$MAX.write_now" && {
+			printf '%s\n' "$LIST" >"$MAX"
+			LIST=
+		}
+
+		OLD_RX=$RX
+		read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
+		DIFF_RX=$(( RX - OLD_RX ))
+
+		OLD_TX=$TX
+		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
+		DIFF_TX=$(( TX - OLD_TX ))
+
+		LIST="$LIST $DIFF_RX $DIFF_TX"
+		sleep 1
+	} done
 }
 
 measure_and_loop_forever()
