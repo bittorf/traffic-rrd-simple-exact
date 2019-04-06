@@ -64,9 +64,10 @@ build_vars()
 	export DEVTYPE='wired'
 	export DEVSPEED='auto'		# see get_dev_speed()
 
+	export KEEP_DAYS=365		# size rrd-database
 	export TMPDIR='/dev/shm'	# should be a (fast) tmpfs
 	export WWWDIR="$WWWDIR/rrd"	# must be writeable for user
-	export KEEP_DAYS=365		# size rrd-database
+	mkdir -p "$WWWDIR"
 
 	export LOG="$TMPDIR/rrd_database_device_${DEV}.log"
 	export RRD="$TMPDIR/rrd_database_device_${DEV}.rrd"
