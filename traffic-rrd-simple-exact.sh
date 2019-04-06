@@ -111,25 +111,40 @@ get_dev_driver()
 
 get_dev_from_ip_default_route()
 {
-	local word parse_next=
+	local word dev parse_next=
 
-	# e.g. default via 10.63.22.97 dev eth0
-	# e.g. default via 10.63.21.97 dev eth0.1 metric 2 onlink
+	if [ -f '/proc/net/route' ]; then
+		# Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+		# eth0    00000000        0101FEA9        0003    0       0       0       00000000        0       0       0
+		# eth0    0101FEA9        00000000        0005    0       0       0       FFFFFFFF        0       0       0
 
-	for word in $( ip route list exact '0.0.0.0/0' ); do {
-		case "$parse_next" in
-			'true')
-				printf '%s\n' "$word"
-				return 0
-			;;
-		esac
+		while read -r dev word _; do {
+			case "$word" in
+				'00000000')
+					printf '%s\n' "$dev"
+					return 0
+				;;
+			esac
+		} done </proc/net/route
+	else
+		# e.g. default via 10.63.22.97 dev eth0
+		# e.g. default via 10.63.21.97 dev eth0.1 metric 2 onlink
 
-		case "$word" in
-			'dev')
-				parse_next='true'
-			;;
-		esac
-	} done
+		for word in $( ip route list exact '0.0.0.0/0' ); do {
+			case "$parse_next" in
+				'true')
+					printf '%s\n' "$word"
+					return 0
+				;;
+			esac
+
+			case "$word" in
+				'dev')
+					parse_next='true'
+				;;
+			esac
+		} done
+	fi
 
 	false
 }
@@ -247,6 +262,79 @@ test_exists()
 	fi
 }
 
+fetch_max_and_plot_rrd_NEW()
+{
+	TIME="$( filetime "$MAX" )"
+	touch "$MAX.write_now"
+
+	while [ "$( filetime "$MAX" )" = "$TIME" ]; do {
+		# wait till MAX gets updated
+		sleep 1
+	} done
+
+	read -r LIST <"$MAX.write_now"
+	rm "$MAX.write_now"
+
+	for TRIPLE in $LIST; do {
+		# rx,tx,uptime
+		:
+	} done
+
+
+
+	T1a="$( uptime_to_centysec "$T1" )"
+	T1b="$( uptime_to_centysec "$OLD_T1" )"
+	if isnumber "$T1a" && isnumber "$T1b"; then
+		T1_DIFF=$(( T1a - T1b ))
+	else
+		T1_DIFF=100
+	fi
+
+	T2a="$( uptime_to_centysec "$T2" )"
+	T2b="$( uptime_to_centysec "$OLD_T2" )"
+	if isnumber "$T2a" && isnumber "$T2b"; then
+		T2_DIFF=$(( T2a - T2b ))
+	else
+		T2_DIFF=100
+	fi
+
+	isnumber "$RX_MAX" || RX_MAX=0
+	isnumber "$TX_MAX" || TX_MAX=0
+
+	# convert bytes to bits and normalize to 1 second
+	rrd_update \
+		"$(( (8 * RX_MAX * 100) / T1_DIFF ))" \
+		"$(( (8 * TX_MAX * 100) / T2_DIFF ))"
+
+	for DURATION in $( duration_list ); do {
+		FILE="$WWWDIR/rrd-$DEV-$DURATION.png"
+
+		case "$DURATION" in
+			1h) MIN_AGE=60 ;;
+			6h) MIN_AGE=180 ;;
+			24h) MIN_AGE=600 ;;
+			1week) MIN_AGE=3600 ;;
+			1month) MIN_AGE=$(( 3600 * 6 )) ;;
+			1year) MIN_AGE=$(( 3600 * 12 )) ;;
+			*) MIN_AGE=60 ;;
+		esac
+
+		[ "$( fileage_in_sec "$FILE" )" -gt $MIN_AGE ] && {
+			rrd_plot "$DURATION" "$FILE"
+
+			[ "$DURATION" = '1year' ] && {
+				[ "$AUTOUPDATE" = 'true' ] && {
+					try_update && {
+						# if there is an update and install was fine:
+						stop_mainloop
+						# ...and cron will reinit
+					}
+				}
+			}
+		}
+	} done
+}
+
 fetch_max_and_plot_rrd()
 {
 	TIME="$( filetime "$MAX" )"
@@ -323,7 +411,8 @@ try_update()
 
 	if tail -n1 "$file" | grep -q ^'# END'$ ; then
 		if cmp -s "$file" "$0"; then
-			log "[OK] no new version"
+			:
+#			log "[OK] no new version"
 		else
 			if sh -n "$file"; then
 				log "[OK] installing new version" alert
@@ -409,7 +498,10 @@ measure_and_loop_foreverNEW()
 		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
 		DIFF_TX=$(( TX - OLD_TX ))
 
-		LIST="$LIST $DIFF_RX $DIFF_TX"
+		read -r UPTIME </proc/uptime
+		TRIPLE="$DIFF_RX,$DIFF_TX,$UPTIME"
+		LIST="$LIST $TRIPLE"
+
 		sleep 1
 	} done
 }
