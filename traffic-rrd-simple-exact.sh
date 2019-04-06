@@ -87,7 +87,7 @@ log()
 		;;
 	esac
 
-	logger -s -- "$0: $message"
+	test -e /dev/log && logger -s -- "$0: $message"
 }
 
 get_dev_speed()		# only for legend in RRD-plot in [mbit/s]
