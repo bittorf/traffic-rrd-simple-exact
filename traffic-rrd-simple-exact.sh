@@ -164,6 +164,7 @@ html_generate()
 	local x=1400
 	local y=770
 	local obj firstrun=true
+	local url_repo='http://github.com/bittorf/traffic-rrd-simple-exact'
 
 	[ -z "$duration" ] && {
 		mkdir -p "$WWWDIR" || log "can not create dir '$WWWDIR'"
@@ -180,6 +181,8 @@ html_generate()
 
 	show_links()
 	{
+		printf '\n%s' '   '
+
 		for obj in $( duration_list ); do {
 			[ -n "$firstrun" ] || printf '%s' ' | '
 			firstrun=
@@ -193,17 +196,23 @@ html_generate()
 	}
 
 	cat >"$WWWDIR/rrd-$DEV-$duration.html" <<EOF
-<!DOCTYPE html><html lang=en><head><style>
+<!DOCTYPE html><html lang=en>
+<head>
+<style>
 .fcon { position: relative; display: inline-block; }
 .flab { position: absolute; bottom: 10px; left: 140px; color: black; }
 .gith { position: absolute; bottom: 10px; right: 20px; color: black; }
-</style><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv=refresh content=90>
-<title>RRD</title></head><body><div class=fcon>
+<title>RRD</title>
+</head>
+<body><div class=fcon>
 <img src='rrd-$DEV-$duration.png' alt='Traffic RRD-Graph of last $duration' width=$x height=$y>
 <span class=flab>Interval: $( show_links )</span><span class=gith>
-<a href='http://github.com/bittorf/traffic-rrd-simple-exact'>http://github.com/bittorf/traffic-rrd-simple-exact</a>
-</span></div></body></html>
+<a href='$url_repo'>$url_repo</a>
+</span></div>
+</body></html>
 EOF
 }
 
