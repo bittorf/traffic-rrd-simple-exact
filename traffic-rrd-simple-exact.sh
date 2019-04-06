@@ -67,7 +67,6 @@ build_vars()
 	export KEEP_DAYS=365		# size rrd-database
 	export TMPDIR='/dev/shm'	# should be a (fast) tmpfs
 	export WWWDIR="$WWWDIR/rrd"	# must be writeable for user
-	mkdir -p "$WWWDIR"
 
 	export LOG="$TMPDIR/rrd_database_device_${DEV}.log"
 	export RRD="$TMPDIR/rrd_database_device_${DEV}.rrd"
@@ -163,6 +162,8 @@ html_generate()
 	local obj firstrun=true
 
 	[ -z "$duration" ] && {
+		mkdir -p "$WWWDIR" || log "can not create dir '$WWWDIR'"
+
 		for duration in $( duration_list ); do {
 			html_generate "$duration"
 		} done
