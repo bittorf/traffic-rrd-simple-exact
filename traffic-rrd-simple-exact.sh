@@ -578,6 +578,9 @@ case "$ACTION" in
 	'stop')
 		stop_mainloop
 	;;
+	'purge')
+		log "TODO: not implemented yet 'purge'"
+	;;
 	'plot')
 		for DURATION in $( duration_list ); do {
 			rrd_plot "$DURATION" "$WWWDIR/rrd-$DEV-$DURATION.png"
