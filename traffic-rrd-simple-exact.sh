@@ -65,7 +65,7 @@ build_vars()
 	export DEVSPEED='auto'		# see get_dev_speed()
 
 	export KEEP_DAYS=365		# size rrd-database
-	export TMPDIR='/dev/shm'	# should be a (fast) tmpfs
+	export TMPDIR='/tmp'		# should be a tmpfs - /dev/shm seems not reliable?
 	export WWWDIR="$WWWDIR/rrd"	# must be writeable for user
 
 	export LOG="$TMPDIR/rrd_database_device_${DEV}.log"
@@ -494,8 +494,8 @@ measure_and_loop_foreverNEW()
 	sleep 0
 
 	# first read for avoiding a large step
-	read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
-	read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
+	read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"			# TODO: can fail
+	read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"			# TODO: can fail
 	sleep 1
 
 	while true; do {
@@ -506,11 +506,11 @@ measure_and_loop_foreverNEW()
 		}
 
 		OLD_RX=$RX
-		read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"
+		read -r RX <"/sys/class/net/$DEV/statistics/rx_bytes"		# TODO: can fail
 		DIFF_RX=$(( RX - OLD_RX ))
 
 		OLD_TX=$TX
-		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"
+		read -r TX <"/sys/class/net/$DEV/statistics/tx_bytes"		# TODO: can fail
 		DIFF_TX=$(( TX - OLD_TX ))
 
 		read -r UPTIME </proc/uptime
