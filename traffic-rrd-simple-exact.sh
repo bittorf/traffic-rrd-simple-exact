@@ -24,6 +24,7 @@ while [ -n "$1" ]; do {
 	shift
 } done
 
+# TODO: javascript: "database is XXX seconds old"
 # TODO: mainloop_simple() only collect all values with all timestamps in a LIST, in 2nd thread: calc+plot+calc average plateau)
 # TODO: autorefresh (depended from plot interval)
 # TODO: check_setup|start|restart
@@ -155,7 +156,7 @@ get_dev_from_ip_default_route()
 
 duration_list()
 {
-	echo '1h 6h 24h 1week 1month 1year'
+	echo '1h 6h 24h 1week 1month 3month 6month 1year'
 }
 
 html_generate()
@@ -237,7 +238,7 @@ rrd_update()
 
 rrd_plot()
 {
-	local duration="$1"		# 1h,6h,24h,1week,1month,1year
+	local duration="$1"		# 1h,6h,24h,1week,1month,3month,6month,1year
 	local file="$2"
 	local color_blue='#0000ff'
 	local color_red='#00ff00'
@@ -329,7 +330,9 @@ fetch_max_and_plot_rrd_NEW()
 			6h) MIN_AGE=180 ;;
 			24h) MIN_AGE=600 ;;
 			1week) MIN_AGE=3600 ;;
-			1month) MIN_AGE=$(( 3600 * 6 )) ;;
+			1month) MIN_AGE=$(( 3600 * 6 * 1 )) ;;
+			3month) MIN_AGE=$(( 3600 * 6 * 3 )) ;;
+			6month) MIN_AGE=$(( 3600 * 6 * 6 )) ;;
 			1year) MIN_AGE=$(( 3600 * 12 )) ;;
 			*) MIN_AGE=60 ;;
 		esac
