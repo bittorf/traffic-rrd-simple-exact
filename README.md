@@ -1,7 +1,7 @@
 demosite
 ========
 
-http://sp.netkom-line.de/rrd
+http://intercity-vpn.de/rrd/
 
 setup
 =====
